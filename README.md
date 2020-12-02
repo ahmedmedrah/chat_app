@@ -1,6 +1,10 @@
 # chat_app
 
-A new Flutter application.
+Chat application using firebase sdk, cloud firestore, firebase auth, cloud messaging, firebase storage
+
+![Alt text](screenshots/1.png?raw=true "Login")
+![Alt text](screenshots/3.png?raw=true "Signup")
+![Alt text](screenshots/2.png?raw=true "Chat screen")
 
 ## Getting Started
 
