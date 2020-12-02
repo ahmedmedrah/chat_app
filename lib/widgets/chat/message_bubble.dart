@@ -1,39 +1,80 @@
+import 'dart:math';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class MessageBubble extends StatelessWidget {
-  final _message;
-  final bool _isMe;
-  final Key _key;
+  final message;
+  final String userName;
+  final bool isMe;
+  final Key key;
+  final userId;
 
-  MessageBubble(this._message, this._isMe,this._key);
+  MessageBubble(
+      {this.message, this.userName, this.isMe, this.key, this.userId});
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      key: _key,
-      mainAxisAlignment: _isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+      key: key,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
       children: [
+        if (!isMe)
+          FutureBuilder(
+            future: FirebaseFirestore.instance.doc('users/$userId').get(),
+            builder: (ctx, snap) {
+              if (snap.connectionState == ConnectionState.waiting)
+                return CircularProgressIndicator();
+              return CircleAvatar(
+                backgroundImage: NetworkImage(snap.data['image_url']),
+              );
+            },
+          ),
         Container(
-          margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-          width: 150,
+          margin: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          padding: EdgeInsets.all(10),
+          width:
+              min(max((userName.length * 15.0), (message.length * 15.0)), 240),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.only(
-              topRight: Radius.circular(15),
-              topLeft: Radius.circular(15),
-              bottomLeft: _isMe ?Radius.circular(15):Radius.circular(0),
-              bottomRight: !_isMe ?Radius.circular(15):Radius.circular(0),
+              bottomRight: Radius.circular(15),
+              bottomLeft: Radius.circular(15),
+              topLeft: isMe ? Radius.circular(15) : Radius.circular(0),
+              topRight: !isMe ? Radius.circular(15) : Radius.circular(0),
             ),
-            color: _isMe ? Colors.green : Colors.blueGrey,
+            color: isMe ? Colors.green[600] : Colors.blueGrey,
           ),
-          child: Text(
-            _message,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white,
-            ),
+          child: Column(
+            crossAxisAlignment:
+                isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            children: [
+              if(!isMe)
+              Text(
+                userName,
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              Text(
+                message,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white,
+                ),
+              ),
+            ],
           ),
         ),
+        if (isMe)
+          FutureBuilder(
+            future: FirebaseFirestore.instance.doc('users/$userId').get(),
+            builder: (ctx, snap) {
+              if (snap.connectionState == ConnectionState.waiting)
+                return CircularProgressIndicator();
+              return CircleAvatar(
+                backgroundImage: NetworkImage(snap.data['image_url']),
+              );
+            },
+          ),
       ],
     );
   }

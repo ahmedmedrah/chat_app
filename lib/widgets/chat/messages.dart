@@ -6,29 +6,28 @@ import 'package:flutter/material.dart';
 class Messages extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: FirebaseAuth.instance.currentUser(),
-      builder: (ctx, futureSnapshot) {
-        if (futureSnapshot.connectionState == ConnectionState.waiting)
+    final user = FirebaseAuth.instance.currentUser;
+    return StreamBuilder(
+      stream: FirebaseFirestore.instance
+          .collection('chats')
+          .orderBy('createdTime', descending: true)
+          .snapshots(),
+      builder: (ct, AsyncSnapshot<QuerySnapshot> snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting)
           return Center(child: CircularProgressIndicator());
-        return StreamBuilder(
-            stream: Firestore.instance
-                .collection('chats')
-                .orderBy('createdTime', descending: true)
-                .snapshots(),
-            builder: (ct, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting)
-                return Center(child: CircularProgressIndicator());
-              final data = snapshot.data.documents;
-              return ListView.builder(
-                reverse: true,
-                itemCount: data.length,
-                itemBuilder: (ctx, i) {
-                  return MessageBubble(data[i]['text'],
-                      data[i]['uid'] == futureSnapshot.data.uid,ValueKey(data[i].documentID));
-                },
-              );
-            }
+        final data = snapshot.data.docs;
+        return ListView.builder(
+          reverse: true,
+          itemCount: data.length,
+          itemBuilder: (ctx, i) {
+            return MessageBubble(
+              message: data[i].data()['text'],
+              userName: data[i].data()['username'],
+              isMe: data[i].data()['uid'] == user.uid,
+              key: ValueKey(data[i].id),
+              userId: data[i].data()['uid'],
+            );
+          },
         );
       },
     );

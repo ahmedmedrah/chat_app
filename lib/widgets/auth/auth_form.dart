@@ -1,7 +1,10 @@
+import 'dart:io';
+
+import 'package:chat_app/widgets/user_image_picker.dart';
 import 'package:flutter/material.dart';
 
 class AuthForm extends StatefulWidget {
-  final void Function(String email, String username, String password,
+  final void Function(String email, String username, String password, File userImageFile,
       bool isLogin, BuildContext ctx) submitAuthData;
   final bool isLoading;
 
@@ -17,20 +20,30 @@ class _AuthFormState extends State<AuthForm> {
   String _userEmail = '';
   String _userName = '';
   String _userPass = '';
+  File _userImage;
+
+  void _pickImage(File pickedImage) {
+    _userImage = pickedImage;
+  }
 
   void _trySubmit() {
     final _isValid = _formKey.currentState.validate();
     FocusScope.of(context).unfocus();
+
+    if (_userImage == null && !_isLogin) {
+      Scaffold.of(context)
+          .showSnackBar(SnackBar(content: Text('Please pick an Image'), backgroundColor: Theme.of(context).errorColor,));
+      return;
+    }
+
     if (_isValid) {
       _formKey.currentState.save();
 
-      print(_userName);
-      print(_userEmail);
-      print(_userPass);
       widget.submitAuthData(
         _userEmail.trim(),
         _userName.trim(),
-        _userPass,
+        _userPass.trim(),
+        _userImage,
         _isLogin,
         context,
       );
@@ -51,7 +64,10 @@ class _AuthFormState extends State<AuthForm> {
                 mainAxisSize: MainAxisSize.min,
                 // mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  if (!_isLogin) UserImagePicker(_pickImage),
                   TextFormField(
+                    autocorrect: false,
+                    textCapitalization: TextCapitalization.none,
                     key: ValueKey('email'),
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(labelText: 'Email Address'),
@@ -66,6 +82,8 @@ class _AuthFormState extends State<AuthForm> {
                   ),
                   if (!_isLogin)
                     TextFormField(
+                      autocorrect: true,
+                      textCapitalization: TextCapitalization.words,
                       key: ValueKey('username'),
                       decoration: InputDecoration(labelText: 'User Name'),
                       validator: (value) {

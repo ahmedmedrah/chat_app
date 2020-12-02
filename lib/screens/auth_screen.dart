@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:chat_app/widgets/auth/auth_form.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -13,9 +16,9 @@ class _AuthScreenState extends State<AuthScreen> {
   final auth = FirebaseAuth.instance;
   var _isLoading = false;
 
-  void _submitAuthForm(String email, String username,String password,
-      bool isLogin, BuildContext ctx) async {
-    AuthResult authResult;
+  void _submitAuthForm(String email, String username, String password,
+      File userImageFile, bool isLogin, BuildContext ctx) async {
+    UserCredential authResult;
 
     try {
       setState(() {
@@ -27,10 +30,19 @@ class _AuthScreenState extends State<AuthScreen> {
       } else {
         authResult = await auth.createUserWithEmailAndPassword(
             email: email, password: password);
-        await Firestore.instance
+        final ref =  FirebaseStorage.instance
+            .ref()
+            .child('users_Images')
+            .child(authResult.user.uid)
+            .child(DateTime.now().toIso8601String() + '.jpg');
+
+        await ref.putFile(userImageFile);
+        final url =await ref.getDownloadURL();
+
+        await FirebaseFirestore.instance
             .collection('users')
-            .document(authResult.user.uid)
-            .setData({'username': username, 'email': email});
+            .doc(authResult.user.uid)
+            .set({'username': username, 'email': email, 'image_url':url});
       }
     } on PlatformException catch (e) {
       var message = 'an error occurred, please check your credentials';
@@ -53,20 +65,28 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).primaryColor,
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'Chat App',
-            style: TextStyle(
-              fontSize: 40,
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
+      //   backgroundColor: Theme.of(context).primaryColor,
+      body: Container(
+        decoration: BoxDecoration(
+            gradient: LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: [Colors.indigo[200], Colors.indigo[900]],
+        )),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Chat App',
+              style: TextStyle(
+                fontSize: 40,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          AuthForm(_submitAuthForm,_isLoading),
-        ],
+            AuthForm(_submitAuthForm, _isLoading),
+          ],
+        ),
       ),
     );
   }
